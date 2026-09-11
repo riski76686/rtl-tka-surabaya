@@ -553,10 +553,8 @@
   </main>
 
   <script>
-    // =========================================================================
-    // URL DEPLOYMENT GOOGLE APPS SCRIPT ANDA SUDAH TERTANAM DI SINI:
-    // =========================================================================
-    const APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzTItarnVlzaA9Wv2hfdTYg2Ol1xCA8NH_MX_reU3GVuniEp5NHVVBUDkD9tGcERk6S/exec"; 
+    // URL DEPLOYMENT GOOGLE APPS SCRIPT ANDA:
+    const APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/a/macros/admin.sd.belajar.id/s/AKfycbzTItarnVlzaA9Wv2hfdtYg2OLlxCA8NH_MX_reU3GVuniEp5NHVVBUDkD9tGcERkeBFw/exec"; 
 
     // Master Wilayah & Kecamatan Kota Surabaya
     const DATA_WILAYAH_KECAMATAN = {
@@ -567,7 +565,7 @@
       "SELATAN": ["Wonokromo", "Wonocolo", "Wiyung", "Karang Pilang", "Jambangan", "Gayungan", "Dukuh Pakis", "Sawahan"]
     };
 
-    // Master Kompetensi & Sub-Kompetensi Bahasa Indonesia Sesuai Portal TKA
+    // Master Kompetensi & Sub-Kompetensi Bahasa Indonesia
     const DATA_INDO = [
       {
         kategori: "1. Pemahaman Tekstual",
@@ -595,7 +593,7 @@
       }
     ];
 
-    // Master Kompetensi & Sub-Kompetensi Matematika Sesuai Portal TKA
+    // Master Kompetensi & Sub-Kompetensi Matematika
     const DATA_MTK = [
       {
         kategori: "1. Bilangan",
@@ -1086,10 +1084,6 @@
       };
     }
 
-    // =========================================================================
-    // FUNGSI KOMUNIKASI DATA (DUAL ENGINE: APPS SCRIPT INTERNAL & FETCH GITHUB)
-    // =========================================================================
-
     function saveToGoogleSheet() {
       const data = getFormDataObject();
       if (!data.npsn) {
@@ -1111,7 +1105,13 @@
       icon.className = 'fa-solid fa-spinner fa-spin text-emerald-200';
       text.textContent = 'Menyimpan...';
 
-      // 1. Jalur Google Apps Script Asli
+      const resetSaveButton = () => {
+        btn.disabled = false;
+        icon.className = 'fa-solid fa-cloud-arrow-up text-emerald-200';
+        text.textContent = 'Simpan ke Spreadsheet';
+      };
+
+      // Jalur Apps Script Asli
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler((res) => {
@@ -1132,7 +1132,7 @@
         return;
       }
 
-      // 2. Jalur GitHub Pages via URL Deployment Apps Script (Fetch API)
+      // Jalur Web / GitHub Pages via Deployment URL
       if (APPS_SCRIPT_WEBAPP_URL && APPS_SCRIPT_WEBAPP_URL.trim() !== "") {
         fetch(APPS_SCRIPT_WEBAPP_URL, {
           method: 'POST',
@@ -1152,18 +1152,12 @@
         return;
       }
 
-      // 3. Fallback Penyimpanan Lokal jika URL belum ditempel
+      // Fallback lokal
       setTimeout(() => {
         resetSaveButton();
         saveDraft();
-        showToast("Data tersimpan di perangkat ini (Isi URL Apps Script di kode untuk simpan ke Spreadsheet).", "success");
+        showToast("Data tersimpan di perangkat ini.", "success");
       }, 500);
-
-      function resetSaveButton() {
-        btn.disabled = false;
-        icon.className = 'fa-solid fa-cloud-arrow-up text-emerald-200';
-        text.textContent = 'Simpan ke Spreadsheet';
-      }
     }
 
     function loadSchoolDataFromSheet() {
@@ -1181,24 +1175,25 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Tarik...';
 
-      // 1. Jalur Google Apps Script Asli
+      const finishBtn = () => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      };
+
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler((res) => {
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
+            finishBtn();
             processLoadResponse(res, periode);
           })
           .withFailureHandler((err) => {
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
+            finishBtn();
             showToast("Gagal mengambil data: " + err.message, "warning");
           })
           .loadRtlDataByNpsnAndPeriode(npsn, periode);
         return;
       }
 
-      // 2. Jalur GitHub Pages via URL Deployment Apps Script (Fetch API)
       if (APPS_SCRIPT_WEBAPP_URL && APPS_SCRIPT_WEBAPP_URL.trim() !== "") {
         fetch(APPS_SCRIPT_WEBAPP_URL, {
           method: 'POST',
@@ -1207,21 +1202,17 @@
         })
         .then(res => res.json())
         .then(res => {
-          btn.disabled = false;
-          btn.innerHTML = originalHtml;
+          finishBtn();
           processLoadResponse(res, periode);
         })
         .catch(err => {
-          btn.disabled = false;
-          btn.innerHTML = originalHtml;
-          showToast("Kendala menarik data: " + err.message, "warning");
+          finishBtn();
+          showToast("Catatan: Tarik data membutuhkan hak akses publik pada Apps Script.", "info");
         });
         return;
       }
 
-      // 3. Fallback
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
+      finishBtn();
       showToast("Tempel URL Web App pada file index.html untuk mengaktifkan tarik data di GitHub Pages.", "info");
     }
 
@@ -1415,11 +1406,11 @@
           text.textContent = 'Unduh .PDF';
           showToast("Berkas PDF berhasil diunduh!", "success");
         })
-        .catch(err => {
+        .catch(() => {
           btn.disabled = false;
           icon.className = 'fa-solid fa-file-pdf text-rose-200';
           text.textContent = 'Unduh .PDF';
-          showToast("Gagal mengunduh PDF, silakan gunakan tombol Cetak.", "warning");
+          showToast("Gagal membuat PDF otomatis, silakan gunakan tombol Cetak.", "warning");
         });
     }
 
