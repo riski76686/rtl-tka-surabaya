@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi RTL Try Out TKA - Kota Surabaya</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- html2pdf.js CDN untuk Unduh PDF Langsung -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Times+New+Roman&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .print-doc {
+      font-family: 'Times New Roman', Times, serif;
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 1.5cm;
+        background: white !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+    .a4-sheet {
+      min-height: 29.7cm;
+      padding: 1.8cm 1.8cm;
+      background: white;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+
+  <header class="bg-emerald-900 text-white sticky top-0 z-40 shadow-md no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-700/80 border border-emerald-500/50 flex items-center justify-center text-white shadow-inner">
+          <i class="fa-solid fa-file-signature text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight">RTL Try Out TKA</h1>
+          <p class="text-[11px] text-emerald-200">Dinas Pendidikan Kota Surabaya</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Simpan ke Spreadsheet -->
+        <button id="btn-save-sheet" type="button" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition border border-emerald-400/40" title="Simpan formulir ke Google Spreadsheet">
+          <i id="save-icon" class="fa-solid fa-cloud-arrow-up text-emerald-200"></i>
+          <span id="save-text">Simpan ke Spreadsheet</span>
+        </button>
+
+        <!-- Unduh PDF Langsung -->
+        <button id="btn-download-pdf" type="button" class="px-3.5 py-2 bg-rose-700 hover:bg-rose-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition" title="Unduh langsung sebagai berkas PDF">
+          <i id="pdf-icon" class="fa-solid fa-file-pdf text-rose-200"></i>
+          <span id="pdf-text">Unduh .PDF</span>
+        </button>
+
+        <!-- Cetak -->
+        <button id="btn-print" type="button" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition" title="Buka jendela cetak / simpan printer">
+          <i class="fa-solid fa-print"></i>
+          <span>Cetak</span>
+        </button>
+
+        <!-- Unduh Word -->
+        <button id="btn-export-doc" type="button" class="px-3.5 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition" title="Unduh berkas Word .doc">
+          <i class="fa-solid fa-file-word text-blue-200"></i>
+          <span>Unduh .Doc</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-5">
+    
+    <!-- Draft Notice Banner -->
+    <div id="draft-notice-banner" class="hidden mb-4 p-3 bg-emerald-50 border border-emerald-300 rounded-lg flex items-center justify-between text-xs text-emerald-900 shadow-sm transition">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+        <span id="draft-notice-text">Data formulir tersimpan secara lokal di perangkat Anda.</span>
+      </div>
+      <button id="btn-dismiss-banner" type="button" class="text-emerald-700 hover:text-emerald-950 px-2 py-0.5 font-bold">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Mode Pengalih Tampilan -->
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3 bg-white p-2 rounded-xl border border-slate-200 shadow-sm no-print">
+      <div class="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
+        <i class="fa-solid fa-sliders text-emerald-600"></i>
+        <span>Pilihan Tampilan:</span>
+      </div>
+      
+      <div class="inline-flex rounded-lg bg-slate-100 p-1 text-xs font-semibold text-slate-700">
+        <button id="view-mode-form" type="button" class="px-3 py-1.5 rounded-md bg-white text-emerald-800 shadow-sm transition flex items-center gap-1.5">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>1. Formulir Saja (Fokus)</span>
+        </button>
+        <button id="view-mode-preview" type="button" class="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-file-lines"></i>
+          <span>2. Pratinjau Dokumen Saja</span>
+        </button>
+        <button id="view-mode-split" type="button" class="hidden md:flex px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition items-center gap-1.5">
+          <i class="fa-solid fa-columns"></i>
+          <span>3. Berdampingan</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="main-content-grid" class="max-w-4xl mx-auto space-y-6">
+      
+      <!-- Panel Formulir -->
+      <section id="form-panel" class="space-y-6 no-print">
+        
+        <!-- BAGIAN A: Identitas Sekolah -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="bg-gradient-to-r from-emerald-800 to-emerald-700 px-4 py-3 text-white flex items-center justify-between">
+            <h2 class="font-bold text-sm sm:text-base flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-emerald-600/60 flex items-center justify-center text-xs">A</span>
+              <span>Identitas Sekolah & Try Out</span>
+            </h2>
+            <span class="text-xs text-emerald-200">Wajib Diisi</span>
+          </div>
+
+          <div class="p-4 space-y-3.5 text-xs sm:text-sm">
+            
+            <!-- Pencarian Berdasarkan NPSN & Periode Try Out -->
+            <div class="bg-emerald-50/80 border border-emerald-200 p-3 rounded-lg space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-emerald-900 flex items-center gap-1.5 text-xs">
+                  <i class="fa-solid fa-cloud-arrow-down text-emerald-700"></i>
+                  <span>Tarik Data yang Pernah Tersimpan di Spreadsheet:</span>
+                </span>
+                <span class="text-[11px] text-emerald-800 italic">Filter: NPSN + Periode TO</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <div class="sm:col-span-6">
+                  <input type="number" id="input-npsn" list="list-npsn-tersimpan" placeholder="Masukkan 8 Digit NPSN" 
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white font-mono text-xs sm:text-sm">
+                  <datalist id="list-npsn-tersimpan"></datalist>
+                </div>
+                <div class="sm:col-span-3">
+                  <select id="select-periode" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none transition text-xs sm:text-sm">
+                  </select>
+                </div>
+                <div class="sm:col-span-3">
+                  <button type="button" id="btn-load-school" class="w-full h-full px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 transition shadow-sm" title="Tarik data RTL untuk NPSN & Periode TO ini">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>Tarik Data</span>
+                  </button>
+                </div>
+              </div>
+              <p class="text-[11px] text-slate-500 leading-snug">
+                <i class="fa-solid fa-circle-info text-emerald-600 mr-0.5"></i>
+                Setiap Try Out memiliki lembar RTL masing-masing. Jika memilih periode baru, profil sekolah otomatis terisi dan kolom analisis disiapkan kosong untuk diisi ulang.
+              </p>
+            </div>
+
+            <!-- Nama Sekolah & KS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label for="input-nama-sekolah" class="block font-medium text-slate-700 mb-1">Nama Sekolah</label>
+                <input type="text" id="input-nama-sekolah" placeholder="Contoh: SD Negeri Tambaksari I Surabaya" 
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
+              </div>
+              <div>
+                <label for="input-nama-ks" class="block font-medium text-slate-700 mb-1">Nama Kepala Sekolah</label>
+                <input type="text" id="input-nama-ks" placeholder="Nama lengkap & gelar" 
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
+              </div>
+            </div>
+
+            <!-- Wilayah & Kecamatan -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="select-wilayah" class="block font-medium text-slate-700 mb-1">Wilayah</label>
+                <select id="select-wilayah" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
+                  <option value="">-- Pilih Wilayah --</option>
+                  <option value="PUSAT">PUSAT</option>
+                  <option value="TIMUR">TIMUR</option>
+                  <option value="BARAT">BARAT</option>
+                  <option value="UTARA">UTARA</option>
+                  <option value="SELATAN">SELATAN</option>
+                </select>
+              </div>
+              <div>
+                <label for="select-kecamatan" class="block font-medium text-slate-700 mb-1">Kecamatan</label>
+                <select id="select-kecamatan" disabled class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
+                  <option value="">-- Pilih Wilayah Dulu --</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Peserta, Tanggal, Guru -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label for="input-peserta" class="block font-medium text-slate-700 mb-1">Jumlah Peserta Try Out</label>
+                <input type="number" id="input-peserta" placeholder="Jumlah siswa" min="1"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
+              </div>
+              <div>
+                <label for="input-tanggal" class="block font-medium text-slate-700 mb-1">Tanggal Penyusunan RTL</label>
+                <input type="date" id="input-tanggal" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
+              </div>
+              <div>
+                <label for="input-nama-guru" class="block font-medium text-slate-700 mb-1">Nama Guru Kelas / Pengisi</label>
+                <input type="text" id="input-nama-guru" placeholder="Nama guru kelas" 
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BAGIAN B: Analisis Capaian Bahasa Indonesia -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-3 text-white flex items-center justify-between">
+            <h2 class="font-bold text-sm sm:text-base flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-blue-700/60 flex items-center justify-center text-xs">B</span>
+              <span>Analisis Capaian Bahasa Indonesia</span>
+            </h2>
+          </div>
+
+          <div class="p-4 space-y-4 text-xs sm:text-sm">
+            <div>
+              <label for="input-nilai-indo" class="block font-medium text-slate-700 mb-1">Nilai Rata-rata Bahasa Indonesia</label>
+              <input type="number" step="0.01" id="input-nilai-indo" placeholder="Contoh: 78.50" 
+                class="w-full sm:w-1/3 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              <!-- Capaian yang Sudah Baik -->
+              <div class="border border-emerald-200 bg-emerald-50/40 rounded-xl p-3.5">
+                <div class="font-bold text-emerald-900 mb-2 flex items-center gap-1.5">
+                  <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                  <span>Capaian yang Sudah Baik</span>
+                </div>
+                <div id="container-indo-baik" class="space-y-3 max-h-96 overflow-y-auto pr-1"></div>
+              </div>
+
+              <!-- Capaian yang Perlu Dikuatkan -->
+              <div class="border border-amber-200 bg-amber-50/40 rounded-xl p-3.5">
+                <div class="font-bold text-amber-900 mb-2 flex items-center gap-1.5">
+                  <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                  <span>Capaian yang Perlu Dikuatkan</span>
+                </div>
+                <div id="container-indo-kuatkan" class="space-y-3 max-h-96 overflow-y-auto pr-1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BAGIAN C: Analisis Capaian Matematika -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="bg-gradient-to-r from-purple-900 to-purple-800 px-4 py-3 text-white flex items-center justify-between">
+            <h2 class="font-bold text-sm sm:text-base flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-purple-700/60 flex items-center justify-center text-xs">C</span>
+              <span>Analisis Capaian Matematika</span>
+            </h2>
+          </div>
+
+          <div class="p-4 space-y-4 text-xs sm:text-sm">
+            <div>
+              <label for="input-nilai-mtk" class="block font-medium text-slate-700 mb-1">Nilai Rata-rata Matematika</label>
+              <input type="number" step="0.01" id="input-nilai-mtk" placeholder="Contoh: 65.40" 
+                class="w-full sm:w-1/3 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none transition">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              <!-- Capaian yang Sudah Baik -->
+              <div class="border border-emerald-200 bg-emerald-50/40 rounded-xl p-3.5">
+                <div class="font-bold text-emerald-900 mb-2 flex items-center gap-1.5">
+                  <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                  <span>Capaian yang Sudah Baik</span>
+                </div>
+                <div id="container-mtk-baik" class="space-y-3 max-h-96 overflow-y-auto pr-1"></div>
+              </div>
+
+              <!-- Capaian yang Perlu Dikuatkan -->
+              <div class="border border-amber-200 bg-amber-50/40 rounded-xl p-3.5">
+                <div class="font-bold text-amber-900 mb-2 flex items-center gap-1.5">
+                  <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                  <span>Capaian yang Perlu Dikuatkan</span>
+                </div>
+                <div id="container-mtk-kuatkan" class="space-y-3 max-h-96 overflow-y-auto pr-1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BAGIAN D: Rencana Tindak Lanjut -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="bg-gradient-to-r from-teal-900 to-teal-800 px-4 py-3 text-white flex items-center justify-between">
+            <h2 class="font-bold text-sm sm:text-base flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-teal-700/60 flex items-center justify-center text-xs">D</span>
+              <span>Rencana Tindak Lanjut (Strategi, Dukungan & Indikator)</span>
+            </h2>
+          </div>
+
+          <div class="p-4 space-y-5 text-xs sm:text-sm">
+            <div class="p-3 bg-teal-50 border border-teal-200 rounded-lg text-teal-900 text-xs leading-relaxed">
+              <i class="fa-solid fa-pencil text-teal-700 mr-1"></i>
+              <strong>Catatan:</strong> Sub-kompetensi yang dicentang pada <em>"Capaian yang Perlu Dikuatkan"</em> otomatis muncul di bawah. Tuliskan strategi, dukungan, dan indikator keberhasilan secara mandiri sesuai karakteristik siswa sekolah Anda.
+            </div>
+
+            <!-- RTL Bahasa Indonesia Container -->
+            <div>
+              <h3 class="font-bold text-slate-800 mb-2.5 pb-1 border-b border-slate-200 flex items-center gap-2 text-xs sm:text-sm">
+                <i class="fa-solid fa-book-open text-blue-700"></i>
+                <span>Mata Pelajaran: Bahasa Indonesia</span>
+              </h3>
+              <div id="rtl-indo-list" class="space-y-3">
+                <div class="text-xs text-slate-400 italic p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-center">
+                  Belum ada sub-kompetensi Bahasa Indonesia yang dipilih untuk dikuatkan.
+                </div>
+              </div>
+            </div>
+
+            <!-- RTL Matematika Container -->
+            <div class="pt-2">
+              <h3 class="font-bold text-slate-800 mb-2.5 pb-1 border-b border-slate-200 flex items-center gap-2 text-xs sm:text-sm">
+                <i class="fa-solid fa-calculator text-purple-700"></i>
+                <span>Mata Pelajaran: Matematika</span>
+              </h3>
+              <div id="rtl-mtk-list" class="space-y-3">
+                <div class="text-xs text-slate-400 italic p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-center">
+                  Belum ada sub-kompetensi Matematika yang dipilih untuk dikuatkan.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BAGIAN E & F: Tantangan dan Hasil -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-3 text-white flex items-center justify-between">
+            <h2 class="font-bold text-sm sm:text-base flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-slate-600/60 flex items-center justify-center text-xs">E & F</span>
+              <span>Tantangan & Evaluasi Hasil</span>
+            </h2>
+          </div>
+
+          <div class="p-4 space-y-4 text-xs sm:text-sm">
+            <div>
+              <label for="input-tantangan" class="block font-medium text-slate-700 mb-1">
+                <strong>E. Tantangan yang Dialami</strong> (Kendala siswa, sarana, waktu, dll.)
+              </label>
+              <textarea id="input-tantangan" rows="3" placeholder="Contoh: Sebagian siswa masih kesulitan memahami soal cerita bertingkat dan keterbatasan waktu jam tambahan." 
+                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:outline-none transition"></textarea>
+            </div>
+
+            <div>
+              <label for="input-hasil" class="block font-medium text-slate-700 mb-1">
+                <strong>F. Hasil Evaluasi</strong> (Diisi setelah mendapat Try Out setelahnya)
+              </label>
+              <textarea id="input-hasil" rows="3" placeholder="Contoh: Rata-rata nilai try out berikutnya meningkat dari 65 menjadi 76 dan indikator keberhasilan tercapai 85%." 
+                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:outline-none transition"></textarea>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Panel Pratinjau Dokumen Cetak A4 -->
+      <section id="preview-panel" class="w-full hidden">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 mb-3 flex items-center justify-between text-xs text-slate-600 no-print">
+          <div class="flex items-center gap-2 font-medium">
+            <i class="fa-solid fa-eye text-emerald-600 text-sm"></i>
+            <span>Pratinjau Resmi Lembar Dokumen RTL (Format Standar Cetak A4)</span>
+          </div>
+          <span class="text-slate-400 italic">Siap Diunduh ke PDF atau Dicetak</span>
+        </div>
+
+        <!-- Sheet Cetak A4 -->
+        <div id="print-area" class="a4-sheet print-doc mx-auto text-black text-[11pt] leading-relaxed">
+          <div class="text-center mb-6">
+            <h1 class="text-base font-bold uppercase tracking-wide">RENCANA TINDAK LANJUT</h1>
+            <h2 class="text-sm font-bold uppercase">HASIL TRY OUT TKA KOTA SURABAYA</h2>
+            <div id="preview-periode-heading" class="text-xs font-semibold mt-1">PERIODE TRY OUT KE-1</div>
+            <hr class="border-t-2 border-black mt-3">
+          </div>
+
+          <!-- A. Identitas Sekolah -->
+          <div class="mb-5">
+            <div class="font-bold mb-1">A. Identitas Sekolah</div>
+            <table class="w-full border-collapse border border-black text-xs">
+              <tbody>
+                <tr>
+                  <td class="border border-black p-1.5 w-1/3 bg-slate-50 font-semibold">Nama Sekolah</td>
+                  <td class="border border-black p-1.5" id="prev-nama-sekolah">-</td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-1.5 bg-slate-50 font-semibold">NPSN</td>
+                  <td class="border border-black p-1.5 font-mono" id="prev-npsn">-</td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-1.5 bg-slate-50 font-semibold">Nama Kepala Sekolah</td>
+                  <td class="border border-black p-1.5" id="prev-nama-ks">-</td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-1.5 bg-slate-50 font-semibold">Wilayah / Kecamatan</td>
+                  <td class="border border-black p-1.5" id="prev-wilayah-kecamatan">-</td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-1.5 bg-slate-50 font-semibold">Jumlah Peserta Try Out</td>
+                  <td class="border border-black p-1.5" id="prev-peserta">-</td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-1.5 bg-slate-50 font-semibold">Periode Try Out</td>
+                  <td class="border border-black p-1.5" id="prev-periode">Ke-1</td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-1.5 bg-slate-50 font-semibold">Tanggal Penyusunan RTL</td>
+                  <td class="border border-black p-1.5" id="prev-tanggal">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- B. Analisis Capaian Bahasa Indonesia -->
+          <div class="mb-5">
+            <div class="font-bold mb-1">B. Analisis Capaian Bahasa Indonesia</div>
+            <table class="w-full border-collapse border border-black text-xs">
+              <tbody>
+                <tr>
+                  <td class="border border-black p-1.5 w-1/3 bg-slate-50 font-semibold">Nilai Rata-rata</td>
+                  <td class="border border-black p-1.5 font-bold" id="prev-nilai-indo">-</td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-1.5 bg-slate-50 font-semibold align-top">Capaian yang Sudah Baik</td>
+                  <td class="border border-black p-1.5 align-top" id="prev-indo-baik"><em>(Belum dipilih)</em></td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-1.5 bg-slate-50 font-semibold align-top">Capaian yang Perlu Dikuatkan</td>
+                  <td class="border border-black p-1.5 align-top" id="prev-indo-kuatkan"><em>(Belum dipilih)</em></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- C. Analisis Capaian Matematika -->
+          <div class="mb-5">
+            <div class="font-bold mb-1">C. Analisis Capaian Matematika</div>
+            <table class="w-full border-collapse border border-black text-xs">
+              <tbody>
+                <tr>
+                  <td class="border border-black p-1.5 w-1/3 bg-slate-50 font-semibold">Nilai Rata-rata</td>
+                  <td class="border border-black p-1.5 font-bold" id="prev-nilai-mtk">-</td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-1.5 bg-slate-50 font-semibold align-top">Capaian yang Sudah Baik</td>
+                  <td class="border border-black p-1.5 align-top" id="prev-mtk-baik"><em>(Belum dipilih)</em></td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-1.5 bg-slate-50 font-semibold align-top">Capaian yang Perlu Dikuatkan</td>
+                  <td class="border border-black p-1.5 align-top" id="prev-mtk-kuatkan"><em>(Belum dipilih)</em></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- D. Rencana Tindak Lanjut -->
+          <div class="mb-5">
+            <div class="font-bold mb-1">D. Rencana Tindak Lanjut</div>
+            
+            <div class="text-xs font-semibold mb-1 mt-2">1. Mata Pelajaran: Bahasa Indonesia</div>
+            <table class="w-full border-collapse border border-black text-xs">
+              <thead>
+                <tr class="bg-slate-100">
+                  <th class="border border-black p-1.5 w-1/4 text-center">Capaian Kompetensi yang Perlu Dikuatkan</th>
+                  <th class="border border-black p-1.5 w-1/4 text-center">Strategi yang Akan Dilakukan</th>
+                  <th class="border border-black p-1.5 w-1/4 text-center">Dukungan yang Diperlukan</th>
+                  <th class="border border-black p-1.5 w-1/4 text-center">Indikator Keberhasilan</th>
+                </tr>
+              </thead>
+              <tbody id="prev-table-rtl-indo">
+                <tr>
+                  <td colspan="4" class="border border-black p-2 text-center text-slate-500 italic">Belum ada kompetensi Bahasa Indonesia yang dipilih.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="text-xs font-semibold mb-1 mt-4">2. Mata Pelajaran: Matematika</div>
+            <table class="w-full border-collapse border border-black text-xs">
+              <thead>
+                <tr class="bg-slate-100">
+                  <th class="border border-black p-1.5 w-1/4 text-center">Capaian Kompetensi yang Perlu Dikuatkan</th>
+                  <th class="border border-black p-1.5 w-1/4 text-center">Strategi yang Akan Dilakukan</th>
+                  <th class="border border-black p-1.5 w-1/4 text-center">Dukungan yang Diperlukan</th>
+                  <th class="border border-black p-1.5 w-1/4 text-center">Indikator Keberhasilan</th>
+                </tr>
+              </thead>
+              <tbody id="prev-table-rtl-mtk">
+                <tr>
+                  <td colspan="4" class="border border-black p-2 text-center text-slate-500 italic">Belum ada kompetensi Matematika yang dipilih.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- E. Tantangan -->
+          <div class="mb-5">
+            <div class="font-bold mb-1">E. Tantangan yang Dialami</div>
+            <div id="prev-tantangan" class="border border-black p-2 text-xs min-h-[50px] whitespace-pre-line">-</div>
+          </div>
+
+          <!-- F. Hasil Evaluasi -->
+          <div class="mb-8">
+            <div class="font-bold mb-1">F. Hasil Evaluasi (Diisi setelah Try Out selanjutnya)</div>
+            <div id="prev-hasil" class="border border-black p-2 text-xs min-h-[50px] whitespace-pre-line">-</div>
+          </div>
+
+          <!-- Tanda Tangan -->
+          <div class="grid grid-cols-2 gap-8 text-xs text-center pt-2">
+            <div>
+              <p>Mengetahui,</p>
+              <p class="font-semibold">Kepala Sekolah</p>
+              <div class="h-20"></div>
+              <p id="prev-ttd-ks" class="font-bold underline">( ............................................ )</p>
+              <p>NIP. ........................................</p>
+            </div>
+            <div>
+              <p id="prev-ttd-tgl">Surabaya, ......................... 202...</p>
+              <p class="font-semibold">Guru Kelas / Pengisi</p>
+              <div class="h-20"></div>
+              <p id="prev-ttd-guru" class="font-bold underline">( ............................................ )</p>
+              <p>NIP. ........................................</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    // =========================================================================
+    // URL DEPLOYMENT GOOGLE APPS SCRIPT ANDA SUDAH TERTANAM DI SINI:
+    // =========================================================================
+    const APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzTItarnVlzaA9Wv2hfdTYg2Ol1xCA8NH_MX_reU3GVuniEp5NHVVBUDkD9tGcERk6S/exec"; 
+
+    // Master Wilayah & Kecamatan Kota Surabaya
+    const DATA_WILAYAH_KECAMATAN = {
+      "PUSAT": ["Tegalsari", "Simokerto", "Genteng", "Bubutan"],
+      "TIMUR": ["Gubeng", "Gunung Anyar", "Sukolilo", "Tambaksari", "Mulyorejo", "Rungkut", "Tenggilis Mejoyo"],
+      "BARAT": ["Benowo", "Pakal", "Asemrowo", "Sukomanunggal", "Tandes", "Sambikerep", "Lakarsantri"],
+      "UTARA": ["Bulak", "Kenjeran", "Semampir", "Pabean Cantian", "Krembangan"],
+      "SELATAN": ["Wonokromo", "Wonocolo", "Wiyung", "Karang Pilang", "Jambangan", "Gayungan", "Dukuh Pakis", "Sawahan"]
+    };
+
+    // Master Kompetensi & Sub-Kompetensi Bahasa Indonesia Sesuai Portal TKA
+    const DATA_INDO = [
+      {
+        kategori: "1. Pemahaman Tekstual",
+        items: [
+          "Menyusun kembali informasi dari teks dalam bentuk ikhtisar/bagan. (Soal 1)",
+          "Mengidentifikasi informasi tersurat dalam teks. (Soal 9, 11, 12, 13, 19, 28)",
+          "Mengidentifikasi objek berdasarkan kosakata yang digunakan dalam teks fiksi dan nonfiksi. (Soal 25)"
+        ]
+      },
+      {
+        kategori: "2. Pemahaman Inferensial",
+        items: [
+          "Menjelaskan makna ungkapan yang digunakan dalam teks. (Soal 2, 7, 22)",
+          "Menyimpulkan ide pokok, gagasan pendukung, amanat, tokoh, peristiwa, dan/atau nilai-nilai dalam teks. (Soal 4, 6, 10, 14, 16, 17, 20, 29)",
+          "Menyimpulkan perubahan sederhana pada objek, karakter, dan/atau latar dalam teks fiksi atau nonfiksi. (Soal 5, 23, 26)"
+        ]
+      },
+      {
+        kategori: "3. Evaluasi dan Apresiasi",
+        items: [
+          "Menilai kesesuaian antarunsur dan/atau antarinformasi dalam teks. (Soal 3, 18)",
+          "Menilai relevansi peristiwa dalam teks dengan kehidupan sehari-hari berdasarkan pengalaman atau pengetahuan pribadi. (Soal 8, 15, 21, 24)",
+          "Menyimpulkan respons emosional terhadap unsur teks fiksi. (Soal 27, 30)"
+        ]
+      }
+    ];
+
+    // Master Kompetensi & Sub-Kompetensi Matematika Sesuai Portal TKA
+    const DATA_MTK = [
+      {
+        kategori: "1. Bilangan",
+        items: [
+          "Memahami & bernalar terkait pecahan senilai menggunakan gambar/simbol. (Soal 1)",
+          "Mengurutkan beberapa bilangan dalam bentuk berbeda. (Soal 2)",
+          "Menentukan faktor bilangan cacah dan mengenal bilangan prima. (Soal 3)",
+          "Menggunakan operasi dasar dua bilangan cacah. (Soal 4)",
+          "Memahami & bernalar terkait operasi bilangan cacah. (Soal 5, 7)",
+          "Memahami & bernalar terkait operasi pecahan dengan bilangan asli. (Soal 6)",
+          "Menyelesaikan persamaan sederhana (penjumlahan/pengurangan). (Soal 8, 9)",
+          "Menyelesaikan persamaan sederhana (semua operasi dasar). (Soal 10, 11)",
+          "Menentukan KPK dan FPB. (Soal 12)"
+        ]
+      },
+      {
+        kategori: "2. Geometri dan Pengukuran",
+        items: [
+          "Memahami & bernalar terkait bentuk bangun datar. (Soal 13, 14)",
+          "Konstruksi bangun ruang dan visualisasi spasial. (Soal 15)",
+          "Memahami & bernalar terkait panjang benda (satuan baku). (Soal 16)",
+          "Memahami & bernalar terkait volume benda (satuan baku). (Soal 17)",
+          "Memahami & bernalar terkait berat benda (satuan baku). (Soal 18)",
+          "Memahami & bernalar terkait waktu. (Soal 19)",
+          "Memahami & bernalar terkait keliling dan luas bangun datar. (Soal 20, 21)",
+          "Menghitung keliling, luas, atau sisi persegi panjang. (Soal 22)",
+          "Mengidentifikasi ciri-ciri segiempat, segitiga, segibanyak, & lingkaran. (Soal 23)",
+          "Menentukan panjang dan berat benda dengan satuan baku. (Soal 24)",
+          "Memahami & bernalar terkait besar sudut. (Soal 25)"
+        ]
+      },
+      {
+        kategori: "3. Data dan Ketidakpastian",
+        items: [
+          "Memahami & bernalar terkait pengambilan informasi dan penggunaan data. (Soal 26)",
+          "Menyajikan, menganalisis, dan menginterpretasi data diagram/tabel. (Soal 27, 28, 29, 30)"
+        ]
+      }
+    ];
+
+    let rtlDetailsState = {
+      indo: {},
+      mtk: {}
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initDropdownPeriode();
+      renderCheckboxes('container-indo-baik', DATA_INDO, 'indo-baik', 'indo');
+      renderCheckboxes('container-indo-kuatkan', DATA_INDO, 'indo-kuatkan', 'indo');
+      renderCheckboxes('container-mtk-baik', DATA_MTK, 'mtk-baik', 'mtk');
+      renderCheckboxes('container-mtk-kuatkan', DATA_MTK, 'mtk-kuatkan', 'mtk');
+
+      setupViewModeControls();
+      setupEventListeners();
+      loadDraft();
+      fetchSavedNpsnFromSheet();
+    });
+
+    function initDropdownPeriode() {
+      const select = document.getElementById('select-periode');
+      if (!select) return;
+      select.innerHTML = '';
+      for (let i = 1; i <= 15; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `Try Out Ke-${i}`;
+        select.appendChild(opt);
+      }
+    }
+
+    function renderCheckboxes(containerId, dataset, inputName, subjectKey) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = '';
+
+      dataset.forEach(group => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'space-y-1.5 pt-1';
+
+        const catTitle = document.createElement('div');
+        catTitle.className = 'text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded flex items-center gap-1';
+        catTitle.innerHTML = `<i class="fa-solid fa-layer-group text-slate-500 text-[10px]"></i> ${group.kategori}`;
+        groupEl.appendChild(catTitle);
+
+        group.items.forEach(item => {
+          const label = document.createElement('label');
+          label.className = 'flex items-start gap-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer text-xs text-slate-700 transition leading-snug';
+
+          const chk = document.createElement('input');
+          chk.type = 'checkbox';
+          chk.name = inputName;
+          chk.value = item;
+          chk.dataset.subject = subjectKey;
+          chk.className = 'mt-0.5 text-emerald-600 rounded focus:ring-emerald-500 focus:ring-1 border-slate-300';
+
+          const span = document.createElement('span');
+          span.textContent = item;
+
+          label.appendChild(chk);
+          label.appendChild(span);
+          groupEl.appendChild(label);
+        });
+
+        container.appendChild(groupEl);
+      });
+    }
+
+    function setupViewModeControls() {
+      const btnForm = document.getElementById('view-mode-form');
+      const btnPreview = document.getElementById('view-mode-preview');
+      const btnSplit = document.getElementById('view-mode-split');
+      
+      const formPanel = document.getElementById('form-panel');
+      const previewPanel = document.getElementById('preview-panel');
+      const gridContainer = document.getElementById('main-content-grid');
+
+      if (!btnForm || !btnPreview || !formPanel || !previewPanel || !gridContainer) return;
+
+      const setActiveButton = (activeBtn) => {
+        [btnForm, btnPreview, btnSplit].forEach(btn => {
+          if (!btn) return;
+          if (btn === activeBtn) {
+            btn.className = 'px-3 py-1.5 rounded-md bg-white text-emerald-800 shadow-sm transition flex items-center gap-1.5 font-semibold';
+          } else {
+            btn.className = 'px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5';
+          }
+        });
+      };
+
+      const setFormOnly = () => {
+        setActiveButton(btnForm);
+        formPanel.classList.remove('hidden');
+        previewPanel.classList.add('hidden');
+        gridContainer.className = 'max-w-4xl mx-auto space-y-6';
+      };
+
+      const setPreviewOnly = () => {
+        setActiveButton(btnPreview);
+        updatePreview();
+        formPanel.classList.add('hidden');
+        previewPanel.classList.remove('hidden');
+        gridContainer.className = 'max-w-4xl mx-auto space-y-6';
+      };
+
+      const setSplitView = () => {
+        if (!btnSplit) return;
+        setActiveButton(btnSplit);
+        updatePreview();
+        formPanel.classList.remove('hidden');
+        previewPanel.classList.remove('hidden');
+        gridContainer.className = 'grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full';
+        formPanel.className = 'lg:col-span-6 space-y-6 no-print';
+        previewPanel.className = 'lg:col-span-6 w-full';
+      };
+
+      btnForm.addEventListener('click', setFormOnly);
+      btnPreview.addEventListener('click', setPreviewOnly);
+      if (btnSplit) btnSplit.addEventListener('click', setSplitView);
+
+      setFormOnly();
+    }
+
+    function setupEventListeners() {
+      const selectWilayah = document.getElementById('select-wilayah');
+      if (selectWilayah) {
+        selectWilayah.addEventListener('change', (e) => {
+          updateKecamatanOptions(e.target.value);
+          saveDraft();
+          updatePreview();
+        });
+      }
+
+      const formInputs = [
+        'input-npsn', 'select-periode', 'input-nama-sekolah', 'input-nama-ks',
+        'select-kecamatan', 'input-peserta', 'input-tanggal', 'input-nama-guru',
+        'input-nilai-indo', 'input-nilai-mtk', 'input-tantangan', 'input-hasil'
+      ];
+
+      formInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', () => {
+            saveDraft();
+            updatePreview();
+          });
+          el.addEventListener('change', () => {
+            saveDraft();
+            updatePreview();
+          });
+        }
+      });
+
+      document.addEventListener('change', (e) => {
+        if (e.target && e.target.type === 'checkbox' && (
+          e.target.name === 'indo-baik' || e.target.name === 'indo-kuatkan' ||
+          e.target.name === 'mtk-baik' || e.target.name === 'mtk-kuatkan'
+        )) {
+          syncMutualExclusion();
+          handleCompetencyChange();
+          saveDraft();
+          updatePreview();
+        }
+      });
+
+      const btnSaveSheet = document.getElementById('btn-save-sheet');
+      if (btnSaveSheet) btnSaveSheet.addEventListener('click', saveToGoogleSheet);
+
+      const btnLoadSchool = document.getElementById('btn-load-school');
+      if (btnLoadSchool) btnLoadSchool.addEventListener('click', loadSchoolDataFromSheet);
+
+      const btnPdf = document.getElementById('btn-download-pdf');
+      if (btnPdf) btnPdf.addEventListener('click', downloadDirectPdf);
+
+      const btnPrint = document.getElementById('btn-print');
+      if (btnPrint) btnPrint.addEventListener('click', openCleanPrintWindow);
+
+      const btnDoc = document.getElementById('btn-export-doc');
+      if (btnDoc) btnDoc.addEventListener('click', exportToWordDoc);
+
+      const btnDismiss = document.getElementById('btn-dismiss-banner');
+      if (btnDismiss) {
+        btnDismiss.addEventListener('click', () => {
+          document.getElementById('draft-notice-banner')?.classList.add('hidden');
+        });
+      }
+    }
+
+    function updateKecamatanOptions(wilayah, selectedKecamatan = "") {
+      const selectKec = document.getElementById('select-kecamatan');
+      if (!selectKec) return;
+
+      selectKec.innerHTML = '';
+      if (!wilayah || !DATA_WILAYAH_KECAMATAN[wilayah]) {
+        selectKec.disabled = true;
+        selectKec.className = 'w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition';
+        selectKec.innerHTML = '<option value="">-- Pilih Wilayah Dulu --</option>';
+        return;
+      }
+
+      selectKec.disabled = false;
+      selectKec.className = 'w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none transition';
+      
+      const defaultOpt = document.createElement('option');
+      defaultOpt.value = "";
+      defaultOpt.textContent = "-- Pilih Kecamatan --";
+      selectKec.appendChild(defaultOpt);
+
+      DATA_WILAYAH_KECAMATAN[wilayah].forEach(kec => {
+        const opt = document.createElement('option');
+        opt.value = kec;
+        opt.textContent = `Kecamatan ${kec}`;
+        if (kec === selectedKecamatan) opt.selected = true;
+        selectKec.appendChild(opt);
+      });
+    }
+
+    function syncMutualExclusion() {
+      const indoBaikChecks = Array.from(document.querySelectorAll('input[name="indo-baik"]'));
+      const indoKuatkanChecks = Array.from(document.querySelectorAll('input[name="indo-kuatkan"]'));
+
+      indoBaikChecks.forEach(chkBaik => {
+        const counterpart = indoKuatkanChecks.find(c => c.value === chkBaik.value);
+        if (counterpart) {
+          if (chkBaik.checked) {
+            counterpart.disabled = true;
+            counterpart.parentElement.classList.add('opacity-40', 'cursor-not-allowed');
+          } else if (counterpart.checked) {
+            chkBaik.disabled = true;
+            chkBaik.parentElement.classList.add('opacity-40', 'cursor-not-allowed');
+          } else {
+            chkBaik.disabled = false;
+            counterpart.disabled = false;
+            chkBaik.parentElement.classList.remove('opacity-40', 'cursor-not-allowed');
+            counterpart.parentElement.classList.remove('opacity-40', 'cursor-not-allowed');
+          }
+        }
+      });
+
+      const mtkBaikChecks = Array.from(document.querySelectorAll('input[name="mtk-baik"]'));
+      const mtkKuatkanChecks = Array.from(document.querySelectorAll('input[name="mtk-kuatkan"]'));
+
+      mtkBaikChecks.forEach(chkBaik => {
+        const counterpart = mtkKuatkanChecks.find(c => c.value === chkBaik.value);
+        if (counterpart) {
+          if (chkBaik.checked) {
+            counterpart.disabled = true;
+            counterpart.parentElement.classList.add('opacity-40', 'cursor-not-allowed');
+          } else if (counterpart.checked) {
+            chkBaik.disabled = true;
+            chkBaik.parentElement.classList.add('opacity-40', 'cursor-not-allowed');
+          } else {
+            chkBaik.disabled = false;
+            counterpart.disabled = false;
+            chkBaik.parentElement.classList.remove('opacity-40', 'cursor-not-allowed');
+            counterpart.parentElement.classList.remove('opacity-40', 'cursor-not-allowed');
+          }
+        }
+      });
+    }
+
+    function handleCompetencyChange() {
+      const selectedIndo = Array.from(document.querySelectorAll('input[name="indo-kuatkan"]:checked')).map(c => c.value);
+      const selectedMtk = Array.from(document.querySelectorAll('input[name="mtk-kuatkan"]:checked')).map(c => c.value);
+
+      renderRtlInputs('rtl-indo-list', selectedIndo, 'indo');
+      renderRtlInputs('rtl-mtk-list', selectedMtk, 'mtk');
+    }
+
+    function renderRtlInputs(containerId, items, subjectKey) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="text-xs text-slate-400 italic p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-center">
+            Belum ada sub-kompetensi yang dipilih untuk dikuatkan.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      items.forEach((itemText, idx) => {
+        if (!rtlDetailsState[subjectKey][itemText]) {
+          rtlDetailsState[subjectKey][itemText] = { strategi: '', dukungan: '', indikator: '' };
+        }
+        const state = rtlDetailsState[subjectKey][itemText];
+
+        const card = document.createElement('div');
+        card.className = 'p-3 bg-white border border-slate-200 rounded-lg shadow-xs space-y-2';
+
+        card.innerHTML = `
+          <div class="font-semibold text-slate-800 text-xs flex items-start gap-1.5 pb-1 border-b border-slate-100">
+            <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">${idx + 1}</span>
+            <span>${itemText}</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+            <div>
+              <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Strategi yang Akan Dilakukan</label>
+              <textarea rows="2" placeholder="Tuliskan strategi..." class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500 focus:outline-none transition" oninput="updateRtlField('${subjectKey}', '${escapeString(itemText)}', 'strategi', this.value)">${state.strategi || ''}</textarea>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Dukungan yang Diperlukan</label>
+              <textarea rows="2" placeholder="Tuliskan dukungan..." class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500 focus:outline-none transition" oninput="updateRtlField('${subjectKey}', '${escapeString(itemText)}', 'dukungan', this.value)">${state.dukungan || ''}</textarea>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Indikator Keberhasilan (Terukur)</label>
+              <textarea rows="2" placeholder="Tuliskan indikator terukur..." class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500 focus:outline-none transition" oninput="updateRtlField('${subjectKey}', '${escapeString(itemText)}', 'indikator', this.value)">${state.indikator || ''}</textarea>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function escapeString(str) {
+      return (str || '').replace(/'/g, "\\'");
+    }
+
+    function updateRtlField(subjectKey, itemText, field, val) {
+      if (!rtlDetailsState[subjectKey][itemText]) {
+        rtlDetailsState[subjectKey][itemText] = { strategi: '', dukungan: '', indikator: '' };
+      }
+      rtlDetailsState[subjectKey][itemText][field] = val;
+      saveDraft();
+      updatePreview();
+    }
+
+    function updatePreview() {
+      const getVal = id => document.getElementById(id)?.value.trim() || '';
+
+      const npsn = getVal('input-npsn');
+      const periode = getVal('select-periode') || '1';
+      const sekolah = getVal('input-nama-sekolah') || '-';
+      const ks = getVal('input-nama-ks') || '-';
+      const wilayah = getVal('select-wilayah');
+      const kec = getVal('select-kecamatan');
+      const peserta = getVal('input-peserta');
+      const tgl = getVal('input-tanggal');
+      const guru = getVal('input-nama-guru') || '-';
+      const nilaiIndo = getVal('input-nilai-indo') || '-';
+      const nilaiMtk = getVal('input-nilai-mtk') || '-';
+      const tantangan = getVal('input-tantangan') || '-';
+      const hasil = getVal('input-hasil') || '-';
+
+      document.getElementById('preview-periode-heading').textContent = `PERIODE TRY OUT KE-${periode}`;
+      document.getElementById('prev-nama-sekolah').textContent = sekolah;
+      document.getElementById('prev-npsn').textContent = npsn || '-';
+      document.getElementById('prev-nama-ks').textContent = ks;
+      document.getElementById('prev-wilayah-kecamatan').textContent = (wilayah && kec) ? `${wilayah} / Kecamatan ${kec}` : '-';
+      document.getElementById('prev-peserta').textContent = peserta ? `${peserta} Siswa` : '-';
+      document.getElementById('prev-periode').textContent = `Ke-${periode}`;
+      document.getElementById('prev-tanggal').textContent = formatDateIndo(tgl);
+
+      document.getElementById('prev-nilai-indo').textContent = nilaiIndo;
+      document.getElementById('prev-nilai-mtk').textContent = nilaiMtk;
+
+      const indoBaik = Array.from(document.querySelectorAll('input[name="indo-baik"]:checked')).map(c => c.value);
+      const indoKuatkan = Array.from(document.querySelectorAll('input[name="indo-kuatkan"]:checked')).map(c => c.value);
+      renderListToPreview('prev-indo-baik', indoBaik);
+      renderListToPreview('prev-indo-kuatkan', indoKuatkan);
+
+      const mtkBaik = Array.from(document.querySelectorAll('input[name="mtk-baik"]:checked')).map(c => c.value);
+      const mtkKuatkan = Array.from(document.querySelectorAll('input[name="mtk-kuatkan"]:checked')).map(c => c.value);
+      renderListToPreview('prev-mtk-baik', mtkBaik);
+      renderListToPreview('prev-mtk-kuatkan', mtkKuatkan);
+
+      renderRtlTableToPreview('prev-table-rtl-indo', indoKuatkan, 'indo');
+      renderRtlTableToPreview('prev-table-rtl-mtk', mtkKuatkan, 'mtk');
+
+      document.getElementById('prev-tantangan').textContent = tantangan;
+      document.getElementById('prev-hasil').textContent = hasil;
+
+      document.getElementById('prev-ttd-ks').textContent = `( ${ks} )`;
+      document.getElementById('prev-ttd-guru').textContent = `( ${guru} )`;
+      document.getElementById('prev-ttd-tgl').textContent = `Surabaya, ${formatDateIndo(tgl)}`;
+    }
+
+    function renderListToPreview(elementId, items) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      if (!items || items.length === 0) {
+        el.innerHTML = '<em class="text-slate-400">(Belum dipilih)</em>';
+        return;
+      }
+      el.innerHTML = `<ol class="list-decimal list-outside pl-4 space-y-1">${items.map(i => `<li>${i}</li>`).join('')}</ol>`;
+    }
+
+    function renderRtlTableToPreview(elementId, items, subjectKey) {
+      const tbody = document.getElementById(elementId);
+      if (!tbody) return;
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="border border-black p-2 text-center text-slate-500 italic">Belum ada kompetensi yang dipilih untuk dikuatkan.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => {
+        const state = rtlDetailsState[subjectKey][item] || {};
+        const strat = state.strategi ? state.strategi.replace(/\n/g, '<br>') : '<em class="text-slate-400">(Belum diisi)</em>';
+        const dukung = state.dukungan ? state.dukungan.replace(/\n/g, '<br>') : '<em class="text-slate-400">(Belum diisi)</em>';
+        const ind = state.indikator ? state.indikator.replace(/\n/g, '<br>') : '<em class="text-slate-400">(Belum diisi)</em>';
+
+        return `
+          <tr>
+            <td class="border border-black p-2 font-medium align-top">${item}</td>
+            <td class="border border-black p-2 align-top">${strat}</td>
+            <td class="border border-black p-2 align-top">${dukung}</td>
+            <td class="border border-black p-2 align-top">${ind}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function formatDateIndo(dateString) {
+      if (!dateString) return '......................... 202...';
+      try {
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+          const bulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+          return `${parseInt(parts[2], 10)} ${bulan[parseInt(parts[1], 10) - 1]} ${parts[0]}`;
+        }
+      } catch (e) {}
+      return dateString;
+    }
+
+    function getFormDataObject() {
+      return {
+        npsn: document.getElementById('input-npsn')?.value.trim() || '',
+        periode: document.getElementById('select-periode')?.value || '1',
+        namaSekolah: document.getElementById('input-nama-sekolah')?.value.trim() || '',
+        namaKs: document.getElementById('input-nama-ks')?.value.trim() || '',
+        wilayah: document.getElementById('select-wilayah')?.value || '',
+        kecamatan: document.getElementById('select-kecamatan')?.value || '',
+        peserta: document.getElementById('input-peserta')?.value.trim() || '',
+        tanggal: document.getElementById('input-tanggal')?.value || '',
+        guru: document.getElementById('input-nama-guru')?.value.trim() || '',
+        nilaiIndo: document.getElementById('input-nilai-indo')?.value.trim() || '',
+        nilaiMtk: document.getElementById('input-nilai-mtk')?.value.trim() || '',
+        indoBaik: Array.from(document.querySelectorAll('input[name="indo-baik"]:checked')).map(c => c.value),
+        indoKuatkan: Array.from(document.querySelectorAll('input[name="indo-kuatkan"]:checked')).map(c => c.value),
+        mtkBaik: Array.from(document.querySelectorAll('input[name="mtk-baik"]:checked')).map(c => c.value),
+        mtkKuatkan: Array.from(document.querySelectorAll('input[name="mtk-kuatkan"]:checked')).map(c => c.value),
+        rtlDetailsState: rtlDetailsState,
+        tantangan: document.getElementById('input-tantangan')?.value || '',
+        hasil: document.getElementById('input-hasil')?.value || '',
+        savedAt: new Date().toISOString()
+      };
+    }
+
+    // =========================================================================
+    // FUNGSI KOMUNIKASI DATA (DUAL ENGINE: APPS SCRIPT INTERNAL & FETCH GITHUB)
+    // =========================================================================
+
+    function saveToGoogleSheet() {
+      const data = getFormDataObject();
+      if (!data.npsn) {
+        showToast("Mohon isi 8 Digit NPSN terlebih dahulu!", "warning");
+        document.getElementById('input-npsn')?.focus();
+        return;
+      }
+      if (!data.namaSekolah) {
+        showToast("Mohon isi Nama Sekolah!", "warning");
+        document.getElementById('input-nama-sekolah')?.focus();
+        return;
+      }
+
+      const btn = document.getElementById('btn-save-sheet');
+      const icon = document.getElementById('save-icon');
+      const text = document.getElementById('save-text');
+
+      btn.disabled = true;
+      icon.className = 'fa-solid fa-spinner fa-spin text-emerald-200';
+      text.textContent = 'Menyimpan...';
+
+      // 1. Jalur Google Apps Script Asli
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            resetSaveButton();
+            if (res && res.success) {
+              showToast(res.message, "success");
+              saveDraft();
+              fetchSavedNpsnFromSheet();
+            } else {
+              showToast((res && res.message) || "Gagal menyimpan ke Spreadsheet.", "warning");
+            }
+          })
+          .withFailureHandler((err) => {
+            resetSaveButton();
+            showToast("Kendala koneksi: " + err.message, "warning");
+          })
+          .saveRtlDataToSheet(data);
+        return;
+      }
+
+      // 2. Jalur GitHub Pages via URL Deployment Apps Script (Fetch API)
+      if (APPS_SCRIPT_WEBAPP_URL && APPS_SCRIPT_WEBAPP_URL.trim() !== "") {
+        fetch(APPS_SCRIPT_WEBAPP_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: "save", data: data })
+        })
+        .then(() => {
+          resetSaveButton();
+          saveDraft();
+          showToast(`Data NPSN ${data.npsn} (TO Ke-${data.periode}) berhasil dikirim ke Spreadsheet!`, "success");
+        })
+        .catch(err => {
+          resetSaveButton();
+          showToast("Gagal mengirim ke Spreadsheet: " + err.message, "warning");
+        });
+        return;
+      }
+
+      // 3. Fallback Penyimpanan Lokal jika URL belum ditempel
+      setTimeout(() => {
+        resetSaveButton();
+        saveDraft();
+        showToast("Data tersimpan di perangkat ini (Isi URL Apps Script di kode untuk simpan ke Spreadsheet).", "success");
+      }, 500);
+
+      function resetSaveButton() {
+        btn.disabled = false;
+        icon.className = 'fa-solid fa-cloud-arrow-up text-emerald-200';
+        text.textContent = 'Simpan ke Spreadsheet';
+      }
+    }
+
+    function loadSchoolDataFromSheet() {
+      const npsn = document.getElementById('input-npsn')?.value.trim();
+      const periode = document.getElementById('select-periode')?.value || '1';
+
+      if (!npsn) {
+        showToast("Ketikkan NPSN sekolah terlebih dahulu!", "warning");
+        document.getElementById('input-npsn')?.focus();
+        return;
+      }
+
+      const btn = document.getElementById('btn-load-school');
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Tarik...';
+
+      // 1. Jalur Google Apps Script Asli
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            processLoadResponse(res, periode);
+          })
+          .withFailureHandler((err) => {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            showToast("Gagal mengambil data: " + err.message, "warning");
+          })
+          .loadRtlDataByNpsnAndPeriode(npsn, periode);
+        return;
+      }
+
+      // 2. Jalur GitHub Pages via URL Deployment Apps Script (Fetch API)
+      if (APPS_SCRIPT_WEBAPP_URL && APPS_SCRIPT_WEBAPP_URL.trim() !== "") {
+        fetch(APPS_SCRIPT_WEBAPP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: "load", npsn: npsn, periode: periode })
+        })
+        .then(res => res.json())
+        .then(res => {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+          processLoadResponse(res, periode);
+        })
+        .catch(err => {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+          showToast("Kendala menarik data: " + err.message, "warning");
+        });
+        return;
+      }
+
+      // 3. Fallback
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+      showToast("Tempel URL Web App pada file index.html untuk mengaktifkan tarik data di GitHub Pages.", "info");
+    }
+
+    function processLoadResponse(res, periode) {
+      if (res && res.success) {
+        if (res.isExactMatch && res.data) {
+          applyDataToForm(res.data);
+          saveDraft();
+          showToast(res.message, "success");
+
+          const banner = document.getElementById('draft-notice-banner');
+          const bannerText = document.getElementById('draft-notice-text');
+          if (banner && bannerText) {
+            bannerText.innerHTML = `<strong>Data RTL Dimuat:</strong> Menampilkan arsip RTL <strong>${res.data.namaSekolah}</strong> untuk <strong>Try Out Ke-${periode}</strong>.`;
+            banner.classList.remove('hidden');
+          }
+        } else if (res.profileOnly) {
+          applySchoolProfileOnly(res.profileOnly);
+          saveDraft();
+          showToast(res.message, "info");
+
+          const banner = document.getElementById('draft-notice-banner');
+          const bannerText = document.getElementById('draft-notice-text');
+          if (banner && bannerText) {
+            bannerText.innerHTML = `<strong>Profil Sekolah Terisi Otomatis:</strong> Identitas sekolah ditemukan. Silakan masukkan analisis baru untuk <strong>Try Out Ke-${periode}</strong>.`;
+            banner.classList.remove('hidden');
+          }
+        }
+      } else {
+        showToast((res && res.message) || "Data tidak ditemukan di Spreadsheet.", "warning");
+      }
+    }
+
+    function applySchoolProfileOnly(profile) {
+      if (!profile) return;
+      if (profile.namaSekolah) document.getElementById('input-nama-sekolah').value = profile.namaSekolah;
+      if (profile.namaKs) document.getElementById('input-nama-ks').value = profile.namaKs;
+      if (profile.wilayah) {
+        document.getElementById('select-wilayah').value = profile.wilayah;
+        updateKecamatanOptions(profile.wilayah, profile.kecamatan || "");
+      }
+      if (profile.guru) document.getElementById('input-nama-guru').value = profile.guru;
+
+      document.getElementById('input-nilai-indo').value = "";
+      document.getElementById('input-nilai-mtk').value = "";
+      document.getElementById('input-tantangan').value = "";
+      document.getElementById('input-hasil').value = "";
+
+      document.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        chk.checked = false;
+        chk.disabled = false;
+      });
+
+      rtlDetailsState.indo = {};
+      rtlDetailsState.mtk = {};
+
+      syncMutualExclusion();
+      handleCompetencyChange();
+      updatePreview();
+    }
+
+    function fetchSavedNpsnFromSheet() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((list) => {
+            if (Array.isArray(list)) populateDatalistNpsn(list);
+          })
+          .withFailureHandler(() => {})
+          .getNpsnListFromSheet();
+        return;
+      }
+
+      if (APPS_SCRIPT_WEBAPP_URL && APPS_SCRIPT_WEBAPP_URL.trim() !== "") {
+        fetch(APPS_SCRIPT_WEBAPP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: "getNpsnList" })
+        })
+        .then(res => res.json())
+        .then(res => {
+          if (res && res.success && Array.isArray(res.list)) {
+            populateDatalistNpsn(res.list);
+          }
+        })
+        .catch(() => {});
+      }
+    }
+
+    function populateDatalistNpsn(list) {
+      const datalist = document.getElementById('list-npsn-tersimpan');
+      if (datalist) {
+        datalist.innerHTML = list.map(item => `<option value="${item.npsn}">${item.nama}</option>`).join('');
+      }
+    }
+
+    function saveDraft() {
+      try {
+        const data = getFormDataObject();
+        localStorage.setItem('rtl_tka_draft', JSON.stringify(data));
+      } catch (e) {}
+    }
+
+    function loadDraft() {
+      try {
+        const raw = localStorage.getItem('rtl_tka_draft');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        applyDataToForm(data);
+      } catch (e) {}
+    }
+
+    function applyDataToForm(data) {
+      if (!data) return;
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val !== undefined) el.value = val;
+      };
+
+      setVal('input-npsn', data.npsn || '');
+      setVal('select-periode', data.periode || '1');
+      setVal('input-nama-sekolah', data.namaSekolah || '');
+      setVal('input-nama-ks', data.namaKs || '');
+      
+      if (data.wilayah) {
+        setVal('select-wilayah', data.wilayah);
+        updateKecamatanOptions(data.wilayah, data.kecamatan || '');
+      }
+      
+      setVal('input-peserta', data.peserta || '');
+      setVal('input-tanggal', data.tanggal || '');
+      setVal('input-nama-guru', data.guru || '');
+      setVal('input-nilai-indo', data.nilaiIndo || '');
+      setVal('input-nilai-mtk', data.nilaiMtk || '');
+      setVal('input-tantangan', data.tantangan || '');
+      setVal('input-hasil', data.hasil || '');
+
+      document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+
+      const checkList = (inputName, values) => {
+        if (!Array.isArray(values)) return;
+        values.forEach(v => {
+          const chk = document.querySelector(`input[name="${inputName}"][value="${v}"]`);
+          if (chk) chk.checked = true;
+        });
+      };
+
+      checkList('indo-baik', data.indoBaik);
+      checkList('indo-kuatkan', data.indoKuatkan);
+      checkList('mtk-baik', data.mtkBaik);
+      checkList('mtk-kuatkan', data.mtkKuatkan);
+
+      if (data.rtlDetailsState) {
+        rtlDetailsState = data.rtlDetailsState;
+      }
+
+      syncMutualExclusion();
+      handleCompetencyChange();
+      updatePreview();
+    }
+
+    function downloadDirectPdf() {
+      updatePreview();
+      const printSheet = document.getElementById('print-area');
+      if (!printSheet) return;
+
+      const btn = document.getElementById('btn-download-pdf');
+      const icon = document.getElementById('pdf-icon');
+      const text = document.getElementById('pdf-text');
+
+      btn.disabled = true;
+      icon.className = 'fa-solid fa-spinner fa-spin text-rose-200';
+      text.textContent = 'Membuat PDF...';
+
+      const sekolah = document.getElementById('input-nama-sekolah')?.value.trim() || 'Sekolah';
+      const periode = document.getElementById('select-periode')?.value || '1';
+      const cleanName = sekolah.replace(/[^a-zA-Z0-9]/g, '_');
+      const filename = `RTL_TKA_${cleanName}_TO${periode}.pdf`;
+
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(printSheet).save()
+        .then(() => {
+          btn.disabled = false;
+          icon.className = 'fa-solid fa-file-pdf text-rose-200';
+          text.textContent = 'Unduh .PDF';
+          showToast("Berkas PDF berhasil diunduh!", "success");
+        })
+        .catch(err => {
+          btn.disabled = false;
+          icon.className = 'fa-solid fa-file-pdf text-rose-200';
+          text.textContent = 'Unduh .PDF';
+          showToast("Gagal mengunduh PDF, silakan gunakan tombol Cetak.", "warning");
+        });
+    }
+
+    function openCleanPrintWindow() {
+      updatePreview();
+      const sheet = document.getElementById('print-area');
+      if (!sheet) return;
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        showToast("Pop-up diblokir peramban. Mohon izinkan pop-up.", "warning");
+        return;
+      }
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Cetak RTL Try Out TKA</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+            body { font-family: 'Times New Roman', Times, serif; margin: 0; padding: 20px; color: #000; }
+            .bar { background: #059669; color: white; padding: 10px 16px; border-radius: 6px; margin-bottom: 20px; font-family: sans-serif; display: flex; justify-content: space-between; align-items: center; }
+            .btn { background: #f59e0b; color: #000; border: none; padding: 8px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 13px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; }
+            th, td { border: 1px solid #000; padding: 6px; }
+            th { background-color: #f1f5f9; }
+            ol { margin: 0; padding-left: 18px; }
+            @media print {
+              .no-print { display: none !important; }
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="bar no-print">
+            <span><strong>Lembar RTL Try Out TKA</strong> (Siap Cetak / Simpan PDF)</span>
+            <button class="btn" onclick="window.print()">Cetak / Simpan PDF</button>
+          </div>
+          <div>${sheet.innerHTML}</div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 500);
+    }
+
+    function exportToWordDoc() {
+      updatePreview();
+      const sheet = document.getElementById('print-area');
+      if (!sheet) return;
+
+      const sekolah = document.getElementById('input-nama-sekolah')?.value.trim() || 'Sekolah';
+      const periode = document.getElementById('select-periode')?.value || '1';
+      const cleanName = sekolah.replace(/[^a-zA-Z0-9]/g, '_');
+      const filename = `RTL_TKA_${cleanName}_TO${periode}.doc`;
+
+      const content = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset='utf-8'>
+          <title>RTL Try Out TKA</title>
+          <style>
+            body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.4; color: black; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 12pt; font-size: 10pt; }
+            th, td { border: 1px solid black; padding: 5pt; }
+            th { background-color: #f1f5f9; font-weight: bold; text-align: center; }
+            ol { margin: 0; padding-left: 18pt; }
+          </style>
+        </head>
+        <body>
+          ${sheet.innerHTML}
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff' + content], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Berkas Word (.doc) berhasil diunduh!", "success");
+    }
+
+    function showToast(message, type = "info") {
+      const existing = document.getElementById('custom-toast');
+      if (existing) existing.remove();
+
+      const toast = document.createElement('div');
+      toast.id = 'custom-toast';
+      toast.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-lg text-white text-xs font-medium flex items-center gap-2.5 transition transform duration-300 ${
+        type === 'success' ? 'bg-emerald-800 border border-emerald-600' :
+        type === 'warning' ? 'bg-amber-800 border border-amber-600' :
+        'bg-slate-800 border border-slate-700'
+      }`;
+
+      const iconClass = type === 'success' ? 'fa-circle-check text-emerald-300' :
+                        type === 'warning' ? 'fa-triangle-exclamation text-amber-300' :
+                        'fa-circle-info text-blue-300';
+
+      toast.innerHTML = `<i class="fa-solid ${iconClass} text-sm"></i> <span>${message}</span>`;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
